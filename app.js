@@ -39,6 +39,7 @@ mongoose.set('useCreateIndex', true);
 const userSchema = new mongoose.Schema({
     email: String,
     password: String, 
+    secrets: String,
 });
 
 //set up userSchema to use passport local mongoose
@@ -74,15 +75,54 @@ app.get('/register', (req, res) =>{
     res.render('register');
 });
 
-app.get('/secrets', (req, res)=>{
-
-        if(req.isAuthenticated())
+app.get('/submit', (req, res)=>{
+    
+    if(req.isAuthenticated())
         {
-            res.render('secrets');
+            res.render('submit');
         }
         else{
             res.redirect('/login');
         }
+})
+
+app.post('/submit', (req, res)=>{
+
+    const secret = req.body.secret;
+
+    User.findById(req.user._id, (error, foundUser)=>{
+
+        if(error)
+        {
+            console.log(error);
+        }
+        else{
+            if(foundUser)
+            {
+                foundUser.secrets = secret;
+
+                foundUser.save(()=>{
+                    res.redirect('/secrets');
+                })
+            }
+        }
+    })
+    console.log(req.user)
+})
+
+app.get('/secrets', (req, res)=>{
+
+        User.find({'secrets': {$ne:null}}, (error, foundUsers)=>{
+            
+            if(error)
+            {
+                console.log(error);
+            }
+            else
+            {
+                res.render('secrets', {userWithSecrets: foundUsers})
+            }
+        })
 });
 
 app.get('/logout', (req, res)=>{
